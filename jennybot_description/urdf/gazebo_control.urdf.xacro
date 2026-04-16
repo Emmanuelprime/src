@@ -1,58 +1,53 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Wheels -->
+  <gazebo reference="left_wheel_link">
+    <material>Gazebo/Black</material>
+    <mu1>1000000000000000.0</mu1>
+    <mu2>1000000000000000.0</mu2>
+    <kp>1000000000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.1</maxVel>
+    <fdir1>1 0 0</fdir1>
+  </gazebo>
+
+  <gazebo reference="right_wheel_link">
+    <material>Gazebo/Black</material>
+    <mu1>1000000000000000.0</mu1>
+    <mu2>1000000000000000.0</mu2>
+    <kp>1000000000000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>0.1</maxVel>
+    <fdir1>1 0 0</fdir1>
+  </gazebo>
     
-
-    <gazebo reference="base_link">
-        <material>
-            Gazebo/White
-        </material>
-    </gazebo>
-
-    <gazebo reference="left_wheel_link">
-        <material>
-            Gazebo/Black
-        </material>
-    </gazebo>
-
-    <gazebo reference="right_wheel_link">
-        <material>
-            Gazebo/Black
-        </material>
-    </gazebo>
-
-    <gazebo reference="caster_wheel">
-        <material>
-            Gazebo/Black
-        </material>
-        <mu1 value="0.8"/>
-        <mu2 value="0.8"/>
-    </gazebo>
+  <!-- Caster Wheel -->
+  <gazebo reference="caster_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+  </gazebo>
     
+  <gazebo>
+    <xacro:if value="$(arg sim_mode)">
+      <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+        <parameters>$(find jennybot_controller)/config/my_controllers.yaml</parameters>
+      </plugin>
+    </xacro:if>
 
-    <gazebo>
-        <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
-
-            <!-- Wheel Information -->
-            <left_joint>left_wheel_joint</left_joint>
-            <right_joint>right_wheel_joint</right_joint>
-            <wheel_separation>0.315</wheel_separation>
-            <wheel_diameter>0.084</wheel_diameter>
-
-
-            <!-- Limits -->
-            <max_wheel_torque>200</max_wheel_torque>
-            <max_wheel_acceleration>10.0</max_wheel_acceleration>
-
-            
-            <!-- Output -->
-            <odometry_frame>odom</odometry_frame>
-            <robot_base_frame>base_footprint</robot_base_frame>
-
-            <publish_odom>true</publish_odom>
-            <publish_odom_tf>true</publish_odom_tf>
-            <publish_wheel_tf>true</publish_wheel_tf>
-
-        </plugin>
-    </gazebo>
+    <xacro:unless value="$(arg sim_mode)">
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find jennybot_controller)/config/my_controllers.yaml</parameters>
+      </plugin>
+    </xacro:unless>
+  </gazebo>
 
 </robot>

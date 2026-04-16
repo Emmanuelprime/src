@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="jennybot">
     <xacro:include filename="core.urdf.xacro"/>
-    <xacro:include filename="inertia_macros.urdf.xacro"/>
     <xacro:include filename="gazebo_control.urdf.xacro"/>
+    <xacro:include filename="ros2_control.urdf.xacro"/>
+    <xacro:include filename="inertia_macros.urdf.xacro"/>
+    <xacro:include filename="lidar.urdf.xacro"/>
+    <xacro:include filename="camera.urdf.xacro"/>
 </robot>
