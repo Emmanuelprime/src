@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray
-from geometry_msgs.msg import TwistStamped, TransformStamped
+from geometry_msgs.msg import TransformStamped
 import numpy as np
 from sensor_msgs.msg import JointState
 from rclpy.time import Time
@@ -11,9 +10,9 @@ from nav_msgs.msg import Odometry
 from tf_transformations import quaternion_from_euler
 from tf2_ros import TransformBroadcaster
 
-class JennyBotSimpleController(Node):
+class JennyBotNoisySimpleController(Node):
     def __init__(self):
-        super().__init__("simple_controller")
+        super().__init__("noisy_simple_controller")
 
         self.declare_parameter("wheel_radius", 0.042)
         self.declare_parameter("wheel_separation", 0.315)
@@ -33,17 +32,14 @@ class JennyBotSimpleController(Node):
         self.theta_ = 0.0
 
 
-        self.wheel_cmd_pub_ = self.create_publisher(Float64MultiArray, "simple_velocity_controller/commands", 10)
-        self.cmd_vel_sub_ = self.create_subscription(TwistStamped, "jennybot_controller/cmd_vel", self.cmd_vel_callback, 10)
-        self.joint_sub_ = self.create_subscription(JointState, "joint_states", self.joint_state_callback, 10)
-        self.odom_publisher_ = self.create_publisher(Odometry, "jennybot_controller/odom", 10)
 
-        self.speed_conversion_ = np.array([[self.wheel_radius/2, self.wheel_radius/2],
-                                            [self.wheel_radius/self.wheel_separation, -self.wheel_radius/self.wheel_separation]])
+        self.joint_sub_ = self.create_subscription(JointState, "joint_states", self.joint_state_callback, 10)
+        self.odom_publisher_ = self.create_publisher(Odometry, "jennybot_controller/odom_noisy", 10)
+
         
         self.odom_msg = Odometry()
         self.odom_msg.header.frame_id = "odom"
-        self.odom_msg.child_frame_id = " base_footprint"
+        self.odom_msg.child_frame_id = " base_footprint_ekf"
         self.odom_msg.pose.pose.orientation.x = 0.0
         self.odom_msg.pose.pose.orientation.y = 0.0
         self.odom_msg.pose.pose.orientation.z = 0.0
@@ -52,27 +48,19 @@ class JennyBotSimpleController(Node):
         self.broadcaster = TransformBroadcaster(self)
         self.transform_stamped = TransformStamped()
         self.transform_stamped.header.frame_id = "odom"
-        self.transform_stamped.child_frame_id = "base_footprint"
-
-        self.get_logger().info(f"Speed conversion matrix:\n{self.speed_conversion_}")
+        self.transform_stamped.child_frame_id = "base_footprint_noisy"
 
 
-    def cmd_vel_callback(self, msg: TwistStamped):
-        robot_speed = np.array([[msg.twist.linear.x],
-                                [msg.twist.angular.z]])
-        
-        wheel_speed = np.matmul(np.linalg.inv(self.speed_conversion_),robot_speed)
-
-        wheel_speed_mg = Float64MultiArray()
-        wheel_speed_mg.data = [wheel_speed[1,0], wheel_speed[0,0]]
-        self.wheel_cmd_pub_.publish(wheel_speed_mg)
 
     def joint_state_callback(self, msg: JointState):
-        dp_left = msg.position[1] - self.left_wheel_prev_position_
-        dp_right = msg.position[0] - self.right_wheel_prev_position_
+        wheel_encoder_left = msg.position[1] + np.random.normal(0, 0.005)
+        wheel_encoder_right = msg.position[0] + np.random.normal(0, 0.005)
+        dp_left = wheel_encoder_left - self.left_wheel_prev_position_
+        dp_right = wheel_encoder_right - self.right_wheel_prev_position_
         dt = Time.from_msg(msg.header.stamp) - self.prev_time_
-        self.left_wheel_prev_position_ = msg.position[1]
-        self.right_wheel_prev_position_ = msg.position[0]
+
+        self.left_wheel_prev_position_ = wheel_encoder_left
+        self.right_wheel_prev_position_ = wheel_encoder_right
         self.prev_time_ = Time.from_msg(msg.header.stamp)
 
         left_phi = dp_left/(dt.nanoseconds / S_TO_NS)
@@ -118,9 +106,9 @@ class JennyBotSimpleController(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    controller_node = JennyBotSimpleController()
-    rclpy.spin(controller_node)
-    controller_node.destroy_node()
+    noisy_controller_node = JennyBotNoisySimpleController()
+    rclpy.spin(noisy_controller_node)
+    noisy_controller_node.destroy_node()
     rclpy.shutdown()
 
 if __name__ == "__main__":
