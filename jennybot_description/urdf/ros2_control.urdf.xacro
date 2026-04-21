@@ -3,34 +3,73 @@
 
     <ros2_control name="RobotSystem" type="system">
 
-        <xacro:if value="$(arg sim_mode)">
-            <hardware>
-                <plugin>ign_ros2_control/IgnitionSystem</plugin>
-            </hardware>
+        <xacro:if value="$(arg is_sim)">
+            <xacro:if value="$(arg is_ignition)">
+                <hardware>
+                    <plugin>ign_ros2_control/IgnitionSystem</plugin>
+                </hardware>
+            </xacro:if>
+
+            <xacro:unless value="$(arg is_ignition)">
+                <hardware>
+                    <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+                </hardware>
+            </xacro:unless>
         </xacro:if>
 
-        <xacro:unless value="$(arg sim_mode)">
+        <xacro:unless value="$(arg is_sim)">
             <hardware>
-                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+                <plugin>jennybot_firmware/JennyBotInterface</plugin>
+                
+                <!-- Serial communication parameters -->
+                <param name="port">/dev/ttyUSB0</param>
+                <param name="baud_rate">115200</param>
+                <param name="timeout_ms">100</param>
+                <param name="enable_checksum">true</param>
+                
+                <!-- Robot-specific parameters -->
+                <param name="robot_type">differential_drive</param>
+                <param name="wheel_separation">0.315</param>
+                <param name="wheel_radius">0.042</param>
+                <param name="control_frequency">50</param>
+                <param name="watchdog_timeout_ms">500</param>
+                <param name="max_reconnect_attempts">3</param>
             </hardware>
         </xacro:unless>
-        
+
         <joint name="right_wheel_joint">
             <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
+                <param name="min">-24.0</param>
+                <param name="max">24.0</param>
             </command_interface>
-            <state_interface name="position" />
-            <state_interface name="velocity" />
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+            <state_interface name="effort"/>
+
+            <param name="max_velocity">24.0</param>
+            <param name="max_acceleration">20.0</param>
+            <param name="encoder_cpr">13.0</param>
+            <param name="wheel_radius">0.042</param>
+            <param name="invert_direction">true</param>
+            <param name="gear_ratio">16.0</param>
         </joint>
+
 
         <joint name="left_wheel_joint">
             <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
+                <param name="min">-24.0</param>
+                <param name="max">24.0</param>
             </command_interface>
-            <state_interface name="position" />
-            <state_interface name="velocity" />
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+            <state_interface name="effort"/>
+            
+            <param name="max_velocity">24.0</param>
+            <param name="max_acceleration">20.0</param>
+            <param name="encoder_cpr">13.0</param>
+            <param name="wheel_radius">0.042</param>
+            <param name="invert_direction">false</param>
+            <param name="gear_ratio">16.0</param>
         </joint>
         
     </ros2_control>

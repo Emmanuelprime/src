@@ -28,13 +28,13 @@ def generate_launch_description():
         )
     
     ros_distro = os.environ["ROS_DISTRO"]
-    sim_mode = "True" if ros_distro == "humble" else "False"
+    is_ignition = "True" if ros_distro == "humble" else "False"
     
     robot_description = ParameterValue(Command([
             "xacro ",
             LaunchConfiguration("model"),
-            " sim_mode:=",
-            sim_mode
+            " is_ignition:=",
+            is_ignition
         ]),
         value_type=str
     )

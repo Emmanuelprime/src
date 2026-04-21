@@ -1,7 +1,6 @@
 controller_manager:
   ros__parameters:
     update_rate: 100 # Hz
-    use_sim_time: true
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
@@ -41,7 +40,7 @@ jennybot_controller:
     base_frame_id: base_footprint
     publish_limited_velocity: true
     publish_wheel_data: true
-    enable_odom_tf: true
+    enable_odom_tf: false
     linear:
       x:
         has_velocity_limits    : true

@@ -37,7 +37,7 @@
   </gazebo>
     
   <gazebo>
-    <xacro:if value="$(arg sim_mode)">
+    <xacro:if value="$(arg is_ignition)">
       <plugin filename="ign_ros2_control-system" name="ign_ros2_control::IgnitionROS2ControlPlugin">
         <parameters>$(find jennybot_controller)/config/my_controllers.yaml</parameters>
       </plugin>
@@ -45,7 +45,7 @@
       </plugin>
     </xacro:if>
 
-    <xacro:unless value="$(arg sim_mode)">
+    <xacro:unless value="$(arg is_ignition)">
       <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
         <parameters>$(find jennybot_controller)/config/my_controllers.yaml</parameters>
       </plugin>
