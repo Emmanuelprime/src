@@ -186,8 +186,22 @@ public:
             }
             
             serial_port_->Open(config_.port);
-            serial_port_->SetBaudRate(static_cast<LibSerial::BaudRate>(config_.baud_rate));
-            serial_port_->SetCharacterSize(static_cast<LibSerial::CharacterSize>(config_.data_bits));
+            
+            // Map integer baud rate to LibSerial enum
+            LibSerial::BaudRate baud;
+            switch (config_.baud_rate) {
+                case 9600:    baud = LibSerial::BaudRate::BAUD_9600; break;
+                case 19200:   baud = LibSerial::BaudRate::BAUD_19200; break;
+                case 38400:   baud = LibSerial::BaudRate::BAUD_38400; break;
+                case 57600:   baud = LibSerial::BaudRate::BAUD_57600; break;
+                case 115200:  baud = LibSerial::BaudRate::BAUD_115200; break;
+                case 230400:  baud = LibSerial::BaudRate::BAUD_230400; break;
+                default:
+                    throw std::runtime_error("Unsupported baud rate: " + std::to_string(config_.baud_rate));
+            }
+            serial_port_->SetBaudRate(baud);
+            
+            serial_port_->SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
             serial_port_->SetParity(config_.parity);
             serial_port_->SetStopBits(config_.stop_bits);
             

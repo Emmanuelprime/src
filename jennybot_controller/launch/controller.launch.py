@@ -77,10 +77,8 @@ def generate_launch_description():
         condition=IfCondition(use_simple_controller)
     )
 
-    noisy_controller_launch = OpaqueFunction(
-        function= noisy_controller
-    )
-
+    # Removed noisy_controller_launch - it was always running unconditionally
+    
     return LaunchDescription(
         [
             wheel_radius_arg,
@@ -92,6 +90,5 @@ def generate_launch_description():
             wheel_controller_spawner,
             simple_controller,
             simple_controller_py,
-            noisy_controller_launch,
         ]
     )
