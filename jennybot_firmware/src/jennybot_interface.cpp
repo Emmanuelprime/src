@@ -100,29 +100,38 @@ CallbackReturn JennyBotInterface::on_activate(const rclcpp_lifecycle::State& /*p
         std::fill(velocity_commands_.begin(), velocity_commands_.end(), 0.0);
         emergency_stop_ = false;
     }
+    RCLCPP_INFO(logger_, "Step 1: States reset");
     
     // Connect to hardware
+    RCLCPP_INFO(logger_, "Step 2: Connecting to serial port...");
     if (!serial_manager_->connect()) {
         RCLCPP_ERROR(logger_, "Failed to connect to hardware");
         return CallbackReturn::FAILURE;
     }
+    RCLCPP_INFO(logger_, "Step 3: Serial port connected");
     
     // Test communication
+    RCLCPP_INFO(logger_, "Step 4: Testing communication...");
     if (!testCommunication()) {
         RCLCPP_ERROR(logger_, "Communication test failed");
         serial_manager_->disconnect();
         return CallbackReturn::FAILURE;
     }
+    RCLCPP_INFO(logger_, "Step 5: Communication test passed");
     
     // Setup watchdog timer
+    RCLCPP_INFO(logger_, "Step 6: Creating watchdog timer...");
     watchdog_timer_ = node_->create_wall_timer(
         std::chrono::milliseconds(robot_config_.watchdog_timeout_ms),
         std::bind(&JennyBotInterface::watchdogCallback, this));
+    RCLCPP_INFO(logger_, "Step 7: Watchdog timer created");
     
     // Setup diagnostics timer
+    RCLCPP_INFO(logger_, "Step 8: Creating diagnostics timer...");
     diagnostics_timer_ = node_->create_wall_timer(
         std::chrono::seconds(1),
         std::bind(&JennyBotInterface::diagnosticsCallback, this));
+    RCLCPP_INFO(logger_, "Step 9: Diagnostics timer created");
     
     last_read_time_ = node_->now();
     last_write_time_ = node_->now();
