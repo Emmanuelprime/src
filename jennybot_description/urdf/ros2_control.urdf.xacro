@@ -22,7 +22,7 @@
                 <plugin>jennybot_firmware/JennyBotInterface</plugin>
                 
                 <!-- Serial communication parameters -->
-                <param name="port">/dev/serial0</param>
+                <param name="port">/dev/ttyUSB0</param>
                 <param name="baud_rate">115200</param>
                 <param name="timeout_ms">100</param>
                 <param name="enable_checksum">true</param>

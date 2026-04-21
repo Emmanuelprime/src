@@ -8,10 +8,6 @@
 
 #include <PID_v1.h>
 
-// ===================== PI SERIAL PINS =====================
-#define PI_RX_PIN 23  // ESP32 receives from Pi TX (GPIO 14)
-#define PI_TX_PIN 19  // ESP32 transmits to Pi RX (GPIO 15)
-
 // ===================== MOTOR PINS =====================
 #define LEFT_SPD_PIN 16
 #define LEFT_DIR1_PIN 17
@@ -314,8 +310,8 @@ bool parseCommandMessage(String msg) {
 }
 
 void processSerialInput() {
-    while (Serial2.available() > 0) {
-        char c = Serial2.read();
+    while (Serial.available() > 0) {
+        char c = Serial.read();
         
         if (c == '\n') {
             // Complete message received
@@ -339,15 +335,14 @@ void sendFeedback() {
     
     if (current_time - last_feedback_time >= FEEDBACK_RATE_MS) {
         String feedback = createFeedbackMessage(left_current_velocity, right_current_velocity);
-        Serial2.print(feedback);
+        Serial.print(feedback);
         last_feedback_time = current_time;
     }
 }
 
 // ===================== SETUP =====================
 void setup() {
-    Serial.begin(115200);   // USB debug
-    Serial2.begin(115200, SERIAL_8N1, PI_RX_PIN, PI_TX_PIN);  // Pi communication
+    Serial.begin(115200);  // USB serial for Pi communication
     
     initMotorPins();
     initEncoders();
