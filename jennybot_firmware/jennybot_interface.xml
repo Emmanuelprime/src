@@ -1,5 +1,5 @@
 <library path="jennybot_firmware">
-    <class name="jennybot_firmware/JennybotInterface" type="jennybot_firmware:JennyBotInterface" base_class_type="hardware_interface::SystemInterface">
+    <class name="jennybot_firmware/JennyBotInterface" type="jennybot_firmware::JennyBotInterface" base_class_type="hardware_interface::SystemInterface">
         <description>
             This class implements the hardware interface for the JennyBot, allowing it to communicate with the Arduino and control the robot's motors.
         </description>
