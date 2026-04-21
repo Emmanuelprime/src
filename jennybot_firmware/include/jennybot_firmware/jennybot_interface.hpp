@@ -185,7 +185,9 @@ public:
                 disconnect();
             }
             
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Opening serial port: %s", config_.port.c_str());
             serial_port_->Open(config_.port);
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port opened");
             
             // Map integer baud rate to LibSerial enum
             LibSerial::BaudRate baud;
@@ -205,11 +207,15 @@ public:
             serial_port_->SetParity(config_.parity);
             serial_port_->SetStopBits(config_.stop_bits);
             
+            // Disable flow control for GPIO UART
+            serial_port_->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
+            
             // Note: LibSerial timeout is handled via IsDataAvailable(), not SetReadTimeout()
             
             is_connected_ = true;
             last_activity_ = std::chrono::steady_clock::now();
             
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port configured successfully");
             return true;
         } catch (const std::exception& e) {
             RCLCPP_ERROR_STREAM(rclcpp::get_logger("SerialPortManager"), 
