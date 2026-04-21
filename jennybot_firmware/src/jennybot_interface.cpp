@@ -104,27 +104,11 @@ CallbackReturn JennyBotInterface::on_activate(const rclcpp_lifecycle::State& /*p
     RCLCPP_INFO(logger_, "Step 1: States reset");
     
     // Connect to hardware
-    RCLCPP_INFO(logger_, "Step 2: Connecting to serial port...");
+    RCLCPP_INFO(logger_, "Step 2: Verifying serial port connection...");
     
-    // Try to connect with timeout using a future
-    std::packaged_task<bool()> connect_task([this]() {
-        return serial_manager_->connect();
-    });
-    auto connect_future = connect_task.get_future();
-    std::thread connect_thread(std::move(connect_task));
-    
-    // Wait for connection with 5 second timeout
-    if (connect_future.wait_for(std::chrono::seconds(5)) == std::future_status::timeout) {
-        RCLCPP_ERROR(logger_, "Serial port connection timed out after 5 seconds");
-        connect_thread.detach(); // Detach the stuck thread
-        return CallbackReturn::FAILURE;
-    }
-    
-    bool connected = connect_future.get();
-    connect_thread.join();
-    
-    if (!connected) {
-        RCLCPP_ERROR(logger_, "Failed to connect to hardware");
+    // Serial port was already connected in configure(), just verify it's still connected
+    if (!serial_manager_->isConnected()) {
+        RCLCPP_ERROR(logger_, "Serial port is not connected");
         return CallbackReturn::FAILURE;
     }
     RCLCPP_INFO(logger_, "Step 3: Serial port connected");
