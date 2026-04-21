@@ -265,6 +265,19 @@ hardware_interface::return_type JennyBotInterface::write(const rclcpp::Time& tim
     (void)time; // Suppress unused parameter warning
     (void)period;
     
+    // Debug: Log raw commands from controller
+    static int write_log_counter = 0;
+    if (write_log_counter++ % 100 == 0) {
+        std::stringstream ss;
+        ss << "write() called - Raw velocity_commands_: [";
+        for (size_t i = 0; i < velocity_commands_.size(); i++) {
+            ss << velocity_commands_[i];
+            if (i < velocity_commands_.size() - 1) ss << ", ";
+        }
+        ss << "] rad/s";
+        RCLCPP_INFO(logger_, "%s", ss.str().c_str());
+    }
+    
     // Emergency stop check
     if (emergency_stop_) {
         std::lock_guard<std::mutex> lock(data_mutex_);
