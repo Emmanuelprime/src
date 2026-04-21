@@ -524,6 +524,18 @@ bool JennyBotInterface::sendCommands()
     // Create and send message
     std::string message = MessageProtocol::createCommand(commands);
     
+    // Debug: log commands being sent
+    static int log_counter = 0;
+    if (log_counter++ % 100 == 0) {  // Log every 100 cycles to avoid spam
+        std::stringstream ss;
+        ss << "Sending commands: ";
+        for (const auto& cmd : commands) {
+            ss << cmd.first << "=" << cmd.second << " rad/s, ";
+        }
+        ss << "Message: " << message;
+        RCLCPP_INFO(logger_, "%s", ss.str().c_str());
+    }
+    
     if (serial_manager_->writeMessage(message)) {
         diagnostics_->stats_.messages_sent++;
         return true;
