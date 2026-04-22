@@ -215,6 +215,24 @@ void controlLoop() {
     leftPID.Compute();
     rightPID.Compute();
     
+    // Debug: Print PID status every second
+    static unsigned long last_debug = 0;
+    if (current_time - last_debug > 1000) {
+        Serial.print("Target: L=");
+        Serial.print(left_target_velocity);
+        Serial.print(" R=");
+        Serial.print(right_target_velocity);
+        Serial.print(" | Current: L=");
+        Serial.print(left_current_velocity);
+        Serial.print(" R=");
+        Serial.print(right_current_velocity);
+        Serial.print(" | PWM: L=");
+        Serial.print((int)left_pwm_output);
+        Serial.print(" R=");
+        Serial.println((int)right_pwm_output);
+        last_debug = current_time;
+    }
+    
     // Apply PWM to motors
     setMotorPWM((int)left_pwm_output, (int)right_pwm_output);
 }
@@ -305,6 +323,10 @@ bool parseCommandMessage(String msg) {
         right_target_velocity = (sign == '+') ? value : -value;
     }
     
+    // Re-enable PIDs when receiving commands
+    leftPID.SetMode(AUTOMATIC);
+    rightPID.SetMode(AUTOMATIC);
+    
     last_command_time = millis();
     return true;
 }
@@ -316,7 +338,16 @@ void processSerialInput() {
         if (c == '\n') {
             // Complete message received
             if (rx_buffer.length() > 0) {
-                parseCommandMessage(rx_buffer + '\n');
+                // Debug: print received command
+                Serial.print("RX: ");
+                Serial.println(rx_buffer);
+                
+                if (parseCommandMessage(rx_buffer + '\n')) {
+                    Serial.print("Parsed OK - L:");
+                    Serial.print(left_target_velocity);
+                    Serial.print(" R:");
+                    Serial.println(right_target_velocity);
+                }
                 rx_buffer = "";
             }
         } else {

@@ -50,7 +50,7 @@
             <param name="max_acceleration">20.0</param>
             <param name="encoder_cpr">13.0</param>
             <param name="wheel_radius">0.042</param>
-            <param name="invert_direction">true</param>
+            <param name="invert_direction">false</param>
             <param name="gear_ratio">16.0</param>
         </joint>
 
