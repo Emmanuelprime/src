@@ -33,7 +33,7 @@ const int CONTROL_PERIOD_MS = 1000 / CONTROL_FREQUENCY;  // 20ms
 
 // PID Controller gains (tune these for your robot)
 double KP = 35.0;  // Proportional gain - aggressive response
-double KI = 20.0;  // Integral gain - fast steady-state correction
+double KI = 10.0;  // Integral gain - reduced to prevent windup
 double KD = 1.5;   // Derivative gain - good damping
 
 // ===================== GLOBAL VARIABLES =====================
@@ -199,6 +199,15 @@ void updateVelocities() {
     float left_new_velocity = (float)delta_left * ticks_to_rad / dt;
     float right_new_velocity = (float)delta_right * ticks_to_rad / dt;
     
+    // Velocity threshold - treat very small velocities as zero to filter noise
+    const float velocity_threshold = 0.5;  // rad/s
+    if (abs(left_new_velocity) < velocity_threshold) {
+        left_new_velocity = 0.0;
+    }
+    if (abs(right_new_velocity) < velocity_threshold) {
+        right_new_velocity = 0.0;
+    }
+    
     // Low-pass filter to reduce encoder noise (alpha=0.7 for moderate filtering)
     const float alpha = 0.7;
     left_current_velocity = alpha * left_new_velocity + (1.0 - alpha) * left_current_velocity;
@@ -225,6 +234,24 @@ void controlLoop() {
     if (current_time - last_command_time > WATCHDOG_TIMEOUT_MS) {
         stopMotors();
         return;
+    }
+    
+    // If target velocity is near zero, stop motors completely to prevent drift
+    if (abs(left_target_velocity) < 0.1 && abs(right_target_velocity) < 0.1) {
+        setMotorPWM(0, 0);
+        left_pwm_output = 0.0;
+        right_pwm_output = 0.0;
+        left_current_velocity = 0.0;
+        right_current_velocity = 0.0;
+        return;
+    }
+    
+    // Ensure PIDs are active when moving
+    if (leftPID.GetMode() != AUTOMATIC) {
+        leftPID.SetMode(AUTOMATIC);
+    }
+    if (rightPID.GetMode() != AUTOMATIC) {
+        rightPID.SetMode(AUTOMATIC);
     }
     
     // Compute PID outputs

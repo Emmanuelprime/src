@@ -21,12 +21,14 @@ class UDPJoystickTeleop(Node):
         self.declare_parameter('max_linear_vel', 1.0)  # m/s
         self.declare_parameter('max_angular_vel', 5.0)  # rad/s
         self.declare_parameter('timeout', 0.5)  # seconds - stop if no data
-        self.declare_parameter('deadzone', 0.2)  # ignore values below this threshold
+        self.declare_parameter('deadzone', 0.15)  # ignore values below this threshold
         
         self.udp_port = self.get_parameter('udp_port').value
         self.max_linear = self.get_parameter('max_linear_vel').value
         self.max_angular = self.get_parameter('max_angular_vel').value
         self.timeout = self.get_parameter('timeout').value
+        self.deadzone = self.get_parameter('deadzone').value
+        self.deadzone = self.get_parameter('deadzone').value
         self.deadzone = self.get_parameter('deadzone').value
         
         # Publisher
