@@ -47,7 +47,7 @@ def generate_launch_description():
     return LaunchDescription([
         hardware_interface,
         controller,
-        # udp_joystick,
+        udp_joystick,
         # joystick,
         # imu_driver_node,
     ])
