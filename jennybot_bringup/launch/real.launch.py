@@ -32,10 +32,10 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'udp_port': 4210,
-            'max_linear_vel': 0.3,   # Reduced until joystick calibrated
-            'max_angular_vel': 1.0,  # Reduced until joystick calibrated
+            'max_linear_vel': 0.8,   # Increased for better speed
+            'max_angular_vel': 4.0,  # Increased for faster turning
             'timeout': 0.5,
-            'deadzone': 0.50,  # Very large to handle bad calibration
+            'deadzone': 0.50,  # Large deadzone to handle calibration offset
         }]
     )
 
