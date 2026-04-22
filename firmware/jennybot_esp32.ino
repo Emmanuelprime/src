@@ -32,9 +32,9 @@ const int CONTROL_FREQUENCY = 50;           // Hz
 const int CONTROL_PERIOD_MS = 1000 / CONTROL_FREQUENCY;  // 20ms
 
 // PID Controller gains (tune these for your robot)
-double KP = 20.0;  // Proportional gain - increased for faster response
-double KI = 5.0;   // Integral gain - increased to eliminate steady-state error
-double KD = 0.2;   // Derivative gain - low for damped geared system
+double KP = 35.0;  // Proportional gain - aggressive response
+double KI = 20.0;  // Integral gain - fast steady-state correction
+double KD = 1.5;   // Derivative gain - good damping
 
 // ===================== GLOBAL VARIABLES =====================
 volatile long right_encoder_count = 0;
@@ -128,6 +128,15 @@ void setMotorPWM(int leftPWM, int rightPWM) {
     leftPWM = constrain(leftPWM, -255, 255);
     rightPWM = constrain(rightPWM, -255, 255);
     
+    // Apply minimum PWM threshold to overcome static friction
+    const int MIN_PWM = 60;
+    if (abs(leftPWM) > 0 && abs(leftPWM) < MIN_PWM) {
+        leftPWM = (leftPWM > 0) ? MIN_PWM : -MIN_PWM;
+    }
+    if (abs(rightPWM) > 0 && abs(rightPWM) < MIN_PWM) {
+        rightPWM = (rightPWM > 0) ? MIN_PWM : -MIN_PWM;
+    }
+    
     // LEFT MOTOR
     if (leftPWM > 0) {
         digitalWrite(LEFT_DIR1_PIN, LOW);
@@ -184,9 +193,16 @@ void updateVelocities() {
     long delta_right = current_right_count - last_right_encoder_count;
     
     // Convert ticks to motor shaft angular velocity (rad/s)
-    // Motor shaft velocity = (delta_ticks / ENCODER_TICKS_PER_REV) * 2*PI / dt
-    left_current_velocity = (delta_left / ENCODER_TICKS_PER_REV) * (2.0 * PI) / dt;
-    right_current_velocity = (delta_right / ENCODER_TICKS_PER_REV) * (2.0 * PI) / dt;
+    // velocity = (delta_ticks / ticks_per_rev) * 2*PI / dt
+    // Simplify: velocity = delta_ticks * (2*PI / ticks_per_rev) / dt
+    const float ticks_to_rad = (2.0 * PI) / ENCODER_TICKS_PER_REV;
+    float left_new_velocity = (float)delta_left * ticks_to_rad / dt;
+    float right_new_velocity = (float)delta_right * ticks_to_rad / dt;
+    
+    // Low-pass filter to reduce encoder noise (alpha=0.7 for moderate filtering)
+    const float alpha = 0.7;
+    left_current_velocity = alpha * left_new_velocity + (1.0 - alpha) * left_current_velocity;
+    right_current_velocity = alpha * right_new_velocity + (1.0 - alpha) * right_current_velocity;
     
     // Update for next iteration
     last_left_encoder_count = current_left_count;
