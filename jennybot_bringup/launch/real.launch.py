@@ -25,6 +25,18 @@ def generate_launch_description():
         }.items(),
     )
 
+    udp_joystick = Node(
+        package='jennybot_controller',
+        executable='udp_joystick_teleop.py',
+        name='udp_joystick_teleop',
+        output='screen',
+        parameters=[{
+            'udp_port': 4210,
+            'max_linear_vel': 1.0,
+            'max_angular_vel': 5.0,
+            'timeout': 0.5,
+        }]
+    )
 
     # imu_driver_node = Node(
     #     package="bumperbot_firmware",
@@ -34,6 +46,7 @@ def generate_launch_description():
     return LaunchDescription([
         hardware_interface,
         controller,
+        udp_joystick,
         # joystick,
         # imu_driver_node,
     ])

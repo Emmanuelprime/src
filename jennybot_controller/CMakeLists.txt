@@ -30,6 +30,7 @@ install(
   PROGRAMS
   ${PROJECT_NAME}/jenny_simple_controller.py
   ${PROJECT_NAME}/noisy_jenny_simple_controller.py
+  ${PROJECT_NAME}/udp_joystick_teleop.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
