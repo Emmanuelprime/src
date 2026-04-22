@@ -35,6 +35,7 @@ def generate_launch_description():
             'max_linear_vel': 1.0,
             'max_angular_vel': 5.0,
             'timeout': 0.5,
+            'deadzone': 0.17,  # Ignore joystick values below 8%
         }]
     )
 

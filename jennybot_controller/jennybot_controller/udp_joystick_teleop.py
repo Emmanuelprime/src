@@ -21,11 +21,13 @@ class UDPJoystickTeleop(Node):
         self.declare_parameter('max_linear_vel', 1.0)  # m/s
         self.declare_parameter('max_angular_vel', 5.0)  # rad/s
         self.declare_parameter('timeout', 0.5)  # seconds - stop if no data
+        self.declare_parameter('deadzone', 0.17)  # ignore values below this threshold
         
         self.udp_port = self.get_parameter('udp_port').value
         self.max_linear = self.get_parameter('max_linear_vel').value
         self.max_angular = self.get_parameter('max_angular_vel').value
         self.timeout = self.get_parameter('timeout').value
+        self.deadzone = self.get_parameter('deadzone').value
         
         # Publisher
         self.cmd_vel_pub = self.create_publisher(
@@ -76,6 +78,12 @@ class UDPJoystickTeleop(Node):
             # Extract joystick values (-1.0 to 1.0)
             ly = data.get('ly', 0.0)  # Left stick Y -> linear velocity
             rx = data.get('rx', 0.0)  # Right stick X -> angular velocity
+            
+            # Apply deadzone to prevent drift from centered joystick
+            if abs(ly) < self.deadzone:
+                ly = 0.0
+            if abs(rx) < self.deadzone:
+                rx = 0.0
             
             # Create Twist message
             msg = Twist()
