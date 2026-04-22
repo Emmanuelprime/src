@@ -32,9 +32,9 @@ const int CONTROL_FREQUENCY = 50;           // Hz
 const int CONTROL_PERIOD_MS = 1000 / CONTROL_FREQUENCY;  // 20ms
 
 // PID Controller gains (tune these for your robot)
-double KP = 50.0;
-double KI = 5.0;
-double KD = 0.5;
+double KP = 20.0;  // Proportional gain - increased for faster response
+double KI = 5.0;   // Integral gain - increased to eliminate steady-state error
+double KD = 0.2;   // Derivative gain - low for damped geared system
 
 // ===================== GLOBAL VARIABLES =====================
 volatile long right_encoder_count = 0;
