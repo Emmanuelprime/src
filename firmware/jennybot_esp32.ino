@@ -32,9 +32,9 @@ const int CONTROL_FREQUENCY = 50;           // Hz
 const int CONTROL_PERIOD_MS = 1000 / CONTROL_FREQUENCY;  // 20ms
 
 // PID Controller gains (tune these for your robot)
-double KP = 35.0;  // Proportional gain - aggressive response
-double KI = 10.0;  // Integral gain - reduced to prevent windup
-double KD = 1.5;   // Derivative gain - good damping
+double KP = 10.0;   // Proportional gain - moderate response
+double KI = 2.0;   // Integral gain - slow accumulation
+double KD = 0.8;   // Derivative gain - damping
 
 // ===================== GLOBAL VARIABLES =====================
 volatile long right_encoder_count = 0;
@@ -124,18 +124,9 @@ void initEncoders() {
 
 // ===================== MOTOR CONTROL =====================
 void setMotorPWM(int leftPWM, int rightPWM) {
-    // Constrain PWM values
+    // Constrain PWM values (MIN_PWM already applied in controlLoop)
     leftPWM = constrain(leftPWM, -255, 255);
     rightPWM = constrain(rightPWM, -255, 255);
-    
-    // Apply minimum PWM threshold to overcome static friction
-    const int MIN_PWM = 60;
-    if (abs(leftPWM) > 0 && abs(leftPWM) < MIN_PWM) {
-        leftPWM = (leftPWM > 0) ? MIN_PWM : -MIN_PWM;
-    }
-    if (abs(rightPWM) > 0 && abs(rightPWM) < MIN_PWM) {
-        rightPWM = (rightPWM > 0) ? MIN_PWM : -MIN_PWM;
-    }
     
     // LEFT MOTOR
     if (leftPWM > 0) {
@@ -200,7 +191,7 @@ void updateVelocities() {
     float right_new_velocity = (float)delta_right * ticks_to_rad / dt;
     
     // Velocity threshold - treat very small velocities as zero to filter noise
-    const float velocity_threshold = 0.5;  // rad/s
+    const float velocity_threshold = 0.2;  // rad/s - lower than command deadband
     if (abs(left_new_velocity) < velocity_threshold) {
         left_new_velocity = 0.0;
     }
@@ -208,8 +199,8 @@ void updateVelocities() {
         right_new_velocity = 0.0;
     }
     
-    // Low-pass filter to reduce encoder noise (alpha=0.7 for moderate filtering)
-    const float alpha = 0.7;
+    // Low-pass filter to reduce encoder noise (alpha=0.8 for less lag)
+    const float alpha = 0.8;
     left_current_velocity = alpha * left_new_velocity + (1.0 - alpha) * left_current_velocity;
     right_current_velocity = alpha * right_new_velocity + (1.0 - alpha) * right_current_velocity;
     
@@ -236,27 +227,54 @@ void controlLoop() {
         return;
     }
     
-    // If target velocity is near zero, stop motors completely to prevent drift
-    if (abs(left_target_velocity) < 0.1 && abs(right_target_velocity) < 0.1) {
+    // DEADBAND: If target velocity is near zero, stop motors completely to prevent drift/hunting
+    const float VELOCITY_DEADBAND = 0.5;  // rad/s - ignore commands below this
+    if (abs(left_target_velocity) < VELOCITY_DEADBAND && abs(right_target_velocity) < VELOCITY_DEADBAND) {
         setMotorPWM(0, 0);
         left_pwm_output = 0.0;
         right_pwm_output = 0.0;
         left_current_velocity = 0.0;
         right_current_velocity = 0.0;
+        // Reset PID to prevent integral windup when stopped
+        leftPID.SetMode(MANUAL);
+        rightPID.SetMode(MANUAL);
         return;
     }
     
     // Ensure PIDs are active when moving
     if (leftPID.GetMode() != AUTOMATIC) {
         leftPID.SetMode(AUTOMATIC);
+        // Reset outputs when reactivating to prevent jumps
+        left_pwm_output = 0.0;
+        right_pwm_output = 0.0;
     }
     if (rightPID.GetMode() != AUTOMATIC) {
         rightPID.SetMode(AUTOMATIC);
+        right_pwm_output = 0.0;
     }
     
     // Compute PID outputs
     leftPID.Compute();
     rightPID.Compute();
+    
+    // Apply output limits with smoother MIN_PWM handling
+    const int MIN_PWM = 60;
+    const int MAX_PWM = 255;
+    
+    // Scale outputs intelligently
+    if (abs(left_pwm_output) > 0) {
+        if (abs(left_pwm_output) < MIN_PWM) {
+            left_pwm_output = (left_pwm_output > 0) ? MIN_PWM : -MIN_PWM;
+        }
+        left_pwm_output = constrain(left_pwm_output, -MAX_PWM, MAX_PWM);
+    }
+    
+    if (abs(right_pwm_output) > 0) {
+        if (abs(right_pwm_output) < MIN_PWM) {
+            right_pwm_output = (right_pwm_output > 0) ? MIN_PWM : -MIN_PWM;
+        }
+        right_pwm_output = constrain(right_pwm_output, -MAX_PWM, MAX_PWM);
+    }
     
     // Debug: Print PID status every second
     static unsigned long last_debug = 0;
@@ -422,8 +440,8 @@ void setup() {
     initEncoders();
     
     // Configure PID controllers
-    leftPID.SetMode(AUTOMATIC);
-    rightPID.SetMode(AUTOMATIC);
+    leftPID.SetMode(MANUAL);  // Start in MANUAL, will activate when commands received
+    rightPID.SetMode(MANUAL);
     leftPID.SetOutputLimits(-255, 255);
     rightPID.SetOutputLimits(-255, 255);
     leftPID.SetSampleTime(CONTROL_PERIOD_MS);

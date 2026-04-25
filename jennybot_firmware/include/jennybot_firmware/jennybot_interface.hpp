@@ -211,41 +211,25 @@ public:
             // Disable flow control for GPIO UART
             serial_port_->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
             
-            // CRITICAL FIX: Perform controlled reset of ESP32
-            // Step 1: Pulse DTR to reset the ESP32 and start firmware
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Resetting ESP32...");
-            serial_port_->SetDTR(true);   // Assert reset
-            serial_port_->SetRTS(false);
+            // CRITICAL: Keep DTR/RTS disabled to prevent ESP32 from entering bootloader mode
+            // The ESP32 boots normally on power-up; DTR pulses trigger bootloader instead
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Configuring serial port (no reset)...");
+            serial_port_->SetDTR(false);  // Keep DTR disabled - no reset
+            serial_port_->SetRTS(false);  // Keep RTS disabled
+            
+            // Brief delay to let port stabilize
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             
-            serial_port_->SetDTR(false);  // Release reset, ESP32 starts booting
-            
-            // Step 2: Wait for ESP32 to boot (typically takes 1-2 seconds)
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Waiting for ESP32 to boot...");
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-            
-            // Step 3: Flush boot messages and stale data
+            // Flush any stale data
             serial_port_->FlushInputBuffer();
             serial_port_->FlushOutputBuffer();
-            
-            // Read and discard any boot messages for 500ms
-            auto start_wait = std::chrono::steady_clock::now();
-            while (std::chrono::duration_cast<std::chrono::milliseconds>(
-                   std::chrono::steady_clock::now() - start_wait).count() < 500) {
-                try {
-                    if (serial_port_->IsDataAvailable()) {
-                        char c;
-                        serial_port_->ReadByte(c);
-                    }
-                } catch (...) {}
-            }
             
             // Note: LibSerial timeout is handled via IsDataAvailable(), not SetReadTimeout()
             
             is_connected_ = true;
             last_activity_ = std::chrono::steady_clock::now();
             
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "ESP32 reset complete, firmware should be ready");
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port ready (ESP32 should already be running firmware)");
             return true;
         } catch (const std::exception& e) {
             RCLCPP_ERROR_STREAM(rclcpp::get_logger("SerialPortManager"), 
