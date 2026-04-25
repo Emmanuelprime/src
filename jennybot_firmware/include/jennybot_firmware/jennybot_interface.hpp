@@ -18,6 +18,7 @@
 #include <queue>
 #include <regex>
 #include <chrono>
+#include <thread>
 #include <unordered_map>
 
 namespace jennybot_firmware
@@ -210,12 +211,24 @@ public:
             // Disable flow control for GPIO UART
             serial_port_->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
             
+            // CRITICAL FIX: Set DTR and RTS signals to wake up the microcontroller
+            // This is what 'cat /dev/ttyUSB0' does automatically
+            serial_port_->SetDTR(true);
+            serial_port_->SetRTS(false);
+            
+            // Flush any stale data in the buffers
+            serial_port_->FlushInputBuffer();
+            serial_port_->FlushOutputBuffer();
+            
+            // Give the hardware time to stabilize after DTR/RTS changes
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
             // Note: LibSerial timeout is handled via IsDataAvailable(), not SetReadTimeout()
             
             is_connected_ = true;
             last_activity_ = std::chrono::steady_clock::now();
             
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port configured successfully");
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port configured successfully with DTR/RTS control");
             return true;
         } catch (const std::exception& e) {
             RCLCPP_ERROR_STREAM(rclcpp::get_logger("SerialPortManager"), 
