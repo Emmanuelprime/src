@@ -211,24 +211,25 @@ public:
             // Disable flow control for GPIO UART
             serial_port_->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
             
-            // CRITICAL FIX: Set DTR and RTS signals to wake up the microcontroller
-            // This is what 'cat /dev/ttyUSB0' does automatically
-            serial_port_->SetDTR(true);
+            // CRITICAL FIX: Prevent ESP32 auto-reset by keeping DTR LOW
+            // When DTR goes HIGH, it triggers the ESP32 reset circuit
+            // Setting DTR=false (LOW) prevents the reset
+            serial_port_->SetDTR(false);  // Keep LOW to prevent reset
             serial_port_->SetRTS(false);
+            
+            // Small delay for signal stabilization
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             
             // Flush any stale data in the buffers
             serial_port_->FlushInputBuffer();
             serial_port_->FlushOutputBuffer();
-            
-            // Give the hardware time to stabilize after DTR/RTS changes
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             
             // Note: LibSerial timeout is handled via IsDataAvailable(), not SetReadTimeout()
             
             is_connected_ = true;
             last_activity_ = std::chrono::steady_clock::now();
             
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port configured successfully with DTR/RTS control");
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Serial port configured (DTR kept LOW to prevent reset)");
             return true;
         } catch (const std::exception& e) {
             RCLCPP_ERROR_STREAM(rclcpp::get_logger("SerialPortManager"), 
