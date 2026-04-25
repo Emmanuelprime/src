@@ -211,11 +211,9 @@ public:
             // Disable flow control for GPIO UART
             serial_port_->SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
             
-            // CRITICAL: Keep DTR/RTS disabled to prevent ESP32 from entering bootloader mode
-            // The ESP32 boots normally on power-up; DTR pulses trigger bootloader instead
-            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Configuring serial port (no reset)...");
-            serial_port_->SetDTR(false);  // Keep DTR disabled - no reset
-            serial_port_->SetRTS(false);  // Keep RTS disabled
+            // Don't touch DTR/RTS - leave them in default state to avoid cp210x driver errors
+            // ESP32 should already be running firmware from power-up
+            RCLCPP_INFO(rclcpp::get_logger("SerialPortManager"), "Opening serial port...");
             
             // Brief delay to let port stabilize
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
