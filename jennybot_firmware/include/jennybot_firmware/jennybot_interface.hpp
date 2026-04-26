@@ -259,6 +259,7 @@ public:
         
         try {
             serial_port_->Write(message);
+            serial_port_->DrainWriteBuffer();  // Ensure data is transmitted immediately
             last_activity_ = std::chrono::steady_clock::now();
             return true;
         } catch (const std::exception& e) {
