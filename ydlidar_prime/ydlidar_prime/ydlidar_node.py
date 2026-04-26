@@ -93,23 +93,30 @@ class YDLidarNode(Node):
             scan_msg.header.stamp = self.get_clock().now().to_msg()
             scan_msg.header.frame_id = self.frame_id
             
-            scan_msg.angle_min = math.radians(scan.config.min_angle)
-            scan_msg.angle_max = math.radians(scan.config.max_angle)
-            scan_msg.angle_increment = math.radians(scan.config.angle_increment)
+            # Force full 360 degree range (SDK sometimes reports incorrect angles)
+            scan_msg.angle_min = math.radians(self.min_angle)  # Use configured value
+            scan_msg.angle_max = math.radians(self.max_angle)  # Use configured value
+            
+            # Calculate angle increment based on number of points
+            num_points = scan.points.size()
+            if num_points > 0:
+                scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / num_points
+            else:
+                scan_msg.angle_increment = math.radians(scan.config.angle_increment)
             scan_msg.scan_time = scan.config.scan_time
             scan_msg.time_increment = scan.config.time_increment
             scan_msg.range_min = scan.config.min_range
             scan_msg.range_max = scan.config.max_range
             
-            # Calculate the number of range readings
-            num_ranges = int((scan.config.max_angle - scan.config.min_angle) / scan.config.angle_increment) + 1
+            # Create range array sized to match angle range and increment
+            num_ranges = int((scan_msg.angle_max - scan_msg.angle_min) / scan_msg.angle_increment)
             scan_msg.ranges = [float('inf')] * num_ranges
             scan_msg.intensities = [0.0] * num_ranges
             
-            # Fill in the scan data
+            # Fill in the scan data using actual point angles
             for point in scan.points:
-                angle_deg = math.degrees(point.angle)
-                index = int((angle_deg - scan.config.min_angle) / scan.config.angle_increment)
+                # Calculate index based on point angle relative to angle_min
+                index = int((point.angle - scan_msg.angle_min) / scan_msg.angle_increment)
                 
                 if 0 <= index < num_ranges:
                     scan_msg.ranges[index] = point.range
