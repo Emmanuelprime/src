@@ -38,9 +38,10 @@ jennybot_controller:
 
     cmd_vel_timeout: 0.5
     base_frame_id: base_footprint
+    odom_frame_id: odom  # REQUIRED: Frame ID for odometry
     publish_limited_velocity: true
     publish_wheel_data: true
-    enable_odom_tf: false
+    enable_odom_tf: true  # Changed to true - needed for SLAM to get odom transform
     linear:
       x:
         has_velocity_limits    : true
