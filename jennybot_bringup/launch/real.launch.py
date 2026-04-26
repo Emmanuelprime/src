@@ -1,11 +1,17 @@
 import os
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, ExecuteProcess
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
+    # Configure serial port BEFORE opening it to prevent ESP32 bootloader entry
+    configure_serial = ExecuteProcess(
+        cmd=['stty', '-F', '/dev/ttyUSB0', '115200', 'cs8', '-cstopb', '-parenb', '-hupcl'],
+        name='configure_serial',
+        output='screen'
+    )
     hardware_interface = IncludeLaunchDescription(
         os.path.join(
             get_package_share_directory("jennybot_firmware"),
@@ -45,6 +51,7 @@ def generate_launch_description():
     # )
     
     return LaunchDescription([
+        configure_serial,  # Configure serial port first to prevent bootloader entry
         hardware_interface,
         controller,
         udp_joystick,
