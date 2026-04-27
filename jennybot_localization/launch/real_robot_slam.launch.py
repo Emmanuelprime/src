@@ -6,7 +6,7 @@ Launches: Robot control, LIDAR, SLAM Toolbox, and Joystick
 
 import os
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
@@ -41,27 +41,37 @@ def generate_launch_description():
         )
     )
     
-    # Launch LIDAR
-    lidar = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(ydlidar_prime_dir, 'launch', 'ydlidar.launch.py')
-        ),
-        launch_arguments={
-            'port': '/dev/ttyUSB1',
-            'baudrate': '115200',
-            'frame_id': 'laser_frame',
-        }.items()
+    # Launch LIDAR - Delay 5 seconds to wait for hardware interface to initialize
+    lidar = TimerAction(
+        period=5.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(ydlidar_prime_dir, 'launch', 'ydlidar.launch.py')
+                ),
+                launch_arguments={
+                    'port': '/dev/ttyUSB1',
+                    'baudrate': '115200',
+                    'frame_id': 'laser_frame',
+                }.items()
+            )
+        ]
     )
     
-    # Launch SLAM Toolbox
-    slam = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(slam_toolbox_dir, 'launch', 'online_async_launch.py')
-        ),
-        launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'params_file': LaunchConfiguration('mapper_params_file'),
-        }.items()
+    # Launch SLAM Toolbox - Delay 10 seconds to wait for LIDAR scans
+    slam = TimerAction(
+        period=10.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(slam_toolbox_dir, 'launch', 'online_async_launch.py')
+                ),
+                launch_arguments={
+                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    'params_file': LaunchConfiguration('mapper_params_file'),
+                }.items()
+            )
+        ]
     )
     
     return LaunchDescription([
