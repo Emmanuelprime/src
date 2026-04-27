@@ -76,6 +76,22 @@ def generate_launch_description():
         ]
     )
 
+    # UDP Joystick for simulation control
+    udp_joystick = Node(
+        package='jennybot_controller',
+        executable='udp_joystick_teleop.py',
+        name='udp_joystick_teleop',
+        output='screen',
+        parameters=[{
+            'udp_port': 4210,
+            'max_linear_vel': 0.8,
+            'max_angular_vel': 4.0,
+            'timeout': 0.5,
+            'deadzone': 0.50,
+            'use_sim_time': True,  # Important for simulation
+        }]
+    )
+
     return LaunchDescription([
         model_arg,
         gazebo_resource_path,
@@ -83,4 +99,5 @@ def generate_launch_description():
         gazebo,
         gz_spawn_entity,
         gz_ros2_bridge,
+        udp_joystick,  # Added UDP joystick
     ])
